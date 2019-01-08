@@ -682,6 +682,12 @@ run_qdnaseq :
 	$(MAKE) -f modules/test/copy_number/qdnaseqextract.mk -j $(NUM_JOBS)
 	$(call RUN_MAKE,modules/test/copy_number/qdnaseqcopynumber.mk)
 
+TARGETS += config
+config :
+	./modules/scripts/configure.py
 
+TARGETS += sample
+sample :
+	vim samples.yaml
 
 .PHONY : $(TARGETS)
