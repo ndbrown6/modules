@@ -686,8 +686,8 @@ TARGETS += config
 config :
 	./modules/scripts/configure.py
 
-TARGETS += sample
-sample :
+TARGETS += samples
+samples :
 	vim samples.yaml
 
 .PHONY : $(TARGETS)
