@@ -1,15 +1,14 @@
 #!/usr/bin/env Rscript
-# Description: This script is used to generate exon raw counts and expression values 
-# Authors: Fong Chun Chan <fongchunchan@gmail.com>
-suppressPackageStartupMessages(library(optparse));
-suppressPackageStartupMessages(library(GenomicFeatures));
-suppressPackageStartupMessages(library(GenomicAlignments));
-suppressPackageStartupMessages(library(Rsamtools));
-suppressPackageStartupMessages(library(TxDb.Hsapiens.UCSC.hg19.knownGene));
+
+suppressPackageStartupMessages(library("optparse"))
+suppressPackageStartupMessages(library("GenomicFeatures"))
+suppressPackageStartupMessages(library("Rsamtools"))
+suppressPackageStartupMessages(library("GenomicAlignments"))
+suppressPackageStartupMessages(library("TxDb.Hsapiens.UCSC.hg19.knownGene"))
+suppressPackageStartupMessages(library("org.Hs.eg.db"))
 
 optionList <- list(
-	#make_option(c('-a', '--addChr'), action='store_true', default = FALSE, help = 'Set the flag to add chr as a prefix to each seqlevel [%default]'),
-	make_option(c('-d', '--txdb'), action='store', default = NULL, help = 'ensembl transcript database'),
+	make_option('--genome', action='store', default = 'b37', help = 'genome to use [%default]'),
 	make_option(c('-o', '--outFile'), action='store', default = NULL, help = 'output file'))
 posArgs <- c('bamFile')
 parser <- OptionParser(usage = paste('%prog [options]', paste(posArgs, collapse=' ')),  option_list=optionList)
@@ -32,18 +31,24 @@ if (length(arguments$args) != length(posArgs)) {
     outFile <- opt$outFile
 }
 
-#For debugging
-if (FALSE){
+if (FALSE) {
 	opt <- list('addChr' = TRUE, 'geneListFile' = NULL)
 	txdbFile <- '~/ensg69.biomart.13012013.sqlite'
 	bamFile <- '~/share/data/DLBCL/WTSS/bam/HS0653.bam'
 	outFile <- 'tmp.txt'
 }
-#txdb <- makeTranscriptDbFromBiomart( biomart = 'ensembl', dataset = 'hsapiens_gene_ensembl' )
-#saveFeatures(txdb, '~/share/reference/ensg69.biomart.2014-02-21.sqlite')
-#txdb <- makeTranscriptDbFromUCSC(genome = 'hg19', tablename = 'ensGene')
-#
-txdb <- loadDb(opt$txdb)
+
+print("Loading txdb ")
+if (opt$genome == "b37" || opt$genome == "hg19" || opt$genome == "GRCh37") {
+    txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+} else {
+    cat("Unsupported genome\n")
+    print_help(parser);
+    stop();
+}
+
+print('... Done')
+
 allExons <- exons(txdb, columns = c('gene_id', 'exon_id', 'exon_name'))
 
 print('Removing chr from chromosome names')
@@ -52,15 +57,13 @@ names(newSeqNames) <- seqlevels(allExons)
 allExons <- renameSeqlevels( allExons, newSeqNames )
 
 cat("Reading", bamFile, " ... ")
-si <- seqinfo(BamFile(bamFile));
-gr <- GRanges(seqnames(si), IRanges(100, seqlengths(si)-100));
-scf <- scanBamFlag( isDuplicate = FALSE ) # remove duplicate reads
-reads <- readGappedReads( bamFile, param = ScanBamParam( which = gr, flag = scf ) ); # grab reads in specific region cat("Finished\n")
-#reads <- GRanges(seqnames = rname(reads), ranges = IRanges(start = start(reads), end = end(reads)), strand = rep('*', length(reads)));
+si <- seqinfo(BamFile(bamFile))
+gr <- GRanges(seqnames(si), IRanges(100, seqlengths(si)-100))
+scf <- scanBamFlag( isDuplicate = FALSE )
+reads <- readGappedReads( bamFile, param = ScanBamParam( which = gr, flag = scf ) )
 cat('Finished\n')
 
 print('Count raw exon read counts ...')
-#countsForExons <- countOverlaps(allExons, reads);
 summarizedExpt <- summarizeOverlaps(allExons, reads)
 countsForExons <- as.numeric( assays(summarizedExpt)$counts )
 names(countsForExons) <- rownames(summarizedExpt)
@@ -78,7 +81,22 @@ print('Retrieving annotation data ...')
 annotDf <- values(allExons)
 print('...Done')
 
-exonsReadDf <- data.frame( geneID = sapply(annotDf[, 'gene_id'], '[[', 1), exonID = annotDf[, 'exon_id'], exonName = annotDf[, 'exon_name'], exonCount = countsForExons, exonRPM = rpm, exonRPKM = rpkm, stringsAsFactors = FALSE )
+index = unlist(lapply(as.vector(annotDf[, 'gene_id']), length)==0)
+annotDf[index,"gene_id"] = NA
+index = unlist(lapply(as.vector(annotDf[, 'exon_id']), length)==0)
+annotDf[index,"exon_id"] = NA
+index = unlist(lapply(as.vector(annotDf[, 'exon_name']), length)==0)
+annotDf[index,"exon_name"] = NA
+exonsReadDf <- data.frame(
+	geneID = unlist(lapply(as.vector(annotDf[, 'gene_id']), function(x) {x[1]})),
+	exonID = unlist(as.vector(annotDf[, 'exon_id'])),
+	exonName = unlist(as.vector(annotDf[, 'exon_name'])),
+	exonCount = countsForExons,
+	exonRPM = rpm,
+	exonRPKM = rpkm,
+	stringsAsFactors = FALSE)
+exonsReadDf <- subset(exonsReadDf, !is.na(exonsReadDf[,"geneID"]))
+exonsReadDf[,"geneID"] <- as.vector(sapply(mget(exonsReadDf[,"geneID"], org.Hs.egSYMBOL, ifnotfound = NA), function (x) x[1]))
 
 print(paste('Writing data to', outFile))
 write.table(exonsReadDf, file = outFile, sep = '\t', quote = F, row.names=F)

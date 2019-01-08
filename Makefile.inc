@@ -1,18 +1,17 @@
-# vim: set ft=make:
 ifneq ("$(wildcard project_config.inc)", "")
-include project_config.inc
+	include project_config.inc
 endif
 include modules/config.inc
 ifdef PROJECT_CONFIG
 include $(PROJECT_CONFIG)
 endif
 ifneq ("$(wildcard config.inc)", "")
-include config.inc
+	include config.inc
 endif
 
 # default reference: 
-REF ?= hg19
-include modules/$(REF).inc
+REF ?= b37
+include modules/genome_inc/$(REF).inc
 
 ifndef MAKEFILE_INC
 

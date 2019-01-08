@@ -60,6 +60,8 @@ define scalpel-tumor-normal
 vcf/$1_$2.scalpel_indels.vcf : $$(foreach chunk,$$(SCALPEL_CHUNKS),scalpel/$1_$2/$$(chunk)/main/somatic.indel.vcf)
 	$$(call RUN,-c -s 4G -m 8G,"(grep '^#' $$<; cat $$^ | grep -v '^#' | $$(VCF_SORT) $$(REF_DICT) -) | \
 		$$(SCALPEL_SOURCE_ANN_VCF) | $$(TUMOR_VARIANT_READ_FILTER_VCF) -t $1 -n $2 > $$@.tmp && \
+		$$(call VERIFY_VCF,$$@.tmp,$$@) && \
+		$$(RSCRIPT) modules/scripts/swapvcf.R --file $$@ --tumor $1 --normal $2 && \
 		$$(call VERIFY_VCF,$$@.tmp,$$@)")
 endef
 $(foreach pair,$(SAMPLE_PAIRS),\
@@ -79,6 +81,8 @@ define scalpel-tumor-normal
 vcf/$1_$2.scalpel_indels.vcf : $$(foreach chr,$$(CHROMOSOMES),scalpel/$1_$2/$$(chr)/main/somatic.indel.vcf)
 	$$(call RUN,-c -s 4G -m 8G,"(grep '^#' $$<; cat $$^ | grep -v '^#' | $$(VCF_SORT) $$(REF_DICT) -) | \
 		$$(SCALPEL_SOURCE_ANN_VCF) | $$(TUMOR_VARIANT_READ_FILTER_VCF) -t $1 -n $2 > $$@.tmp && \
+		$$(call VERIFY_VCF,$$@.tmp,$$@) && \
+		$$(RSCRIPT) modules/scripts/swapvcf.R --file $$@ --tumor $1 --normal $2 && \
 		$$(call VERIFY_VCF,$$@.tmp,$$@)")
 endef
 $(foreach pair,$(SAMPLE_PAIRS),\

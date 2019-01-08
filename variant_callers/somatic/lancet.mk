@@ -26,23 +26,16 @@ TUMOR_VARIANT_READ_FILTER_VCF = python modules/vcf_tools/tumor_variant_read_filt
 
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all lancet_vcfs # lancet_mafs
+.PHONY: all lancet_vcfs
 
-lancet : lancet_vcfs #lancet_mafs
+lancet : lancet_vcfs
 
 
 lancet_vcfs : $(foreach pair,$(SAMPLE_PAIRS),vcf/$(pair).lancet_indels.vcf)
-#lancet_mafs : $(foreach pair,$(SAMPLE_PAIR),maf/$(pair).lancet_indels.maf)
 
 ifeq ($(LANCET_TARGET_ONLY),true)
 lancet/interval_chunk/chunk.timestamp : $(TARGETS_FILE)
 	$(INIT) $(SPLIT_BED) --out_prefix $(@D)/chunk --num_chunks $(NUM_LANCET_CHUNKS) $<  && touch $@
-#else
-#lancet_genome_sliding_window.bed : $(REF_DICT)
-	#$(INIT) bedtools makewindows -g <(sed 's/.*SN:\([^\s]\+\)\sLN:\([0-9]\+\).*/\1\t\2/' $<) -w 10000 -s 9900 > $@
-#lancet/interval_chunk/chunk.timestamp : lancet_genome_sliding_window.bed
-	#$(INIT) $(SPLIT_BED) --out_prefix $(@D)/chunk --num_chunks $(NUM_LANCET_CHUNKS) $<  && touch $@
-#endif
 
 define lancet-interval-chunk
 lancet/interval_chunk/chunk$1.bed : lancet/interval_chunk/chunk.timestamp
@@ -92,9 +85,11 @@ $(foreach pair,$(SAMPLE_PAIRS),\
 endif
 
 define filter_lancet-tumor-normal
-vcf/$1_$2.lancet_%.vcf : lancet/vcf/$1_$2.lancet_%.vcf
-	$$(call RUN,-s 1G -m 2G,"$$(LANCET_SOURCE_ANN_VCF) < $$< | \
-		$$(TUMOR_VARIANT_READ_FILTER_VCF) -t $1 -n $2 > $$@.tmp && $$(call VERIFY_VCF,$$@.tmp,$$@)")
+vcf/$1_$2.lancet_%.vcf lancet/vcf/$1_$2.lancet_%.vcf.tmp : lancet/vcf/$1_$2.lancet_%.vcf
+	$$(call RUN,-s 1G -m 2G,"$$(RSCRIPT) modules/scripts/swapvcf.R --file $$< --tumor $1 --normal $2 && \
+							 cp $$<.tmp $$< && \
+							 $$(LANCET_SOURCE_ANN_VCF) < $$< | \
+							 $$(TUMOR_VARIANT_READ_FILTER_VCF) -t $1 -n $2 > $$@.tmp && $$(call VERIFY_VCF,$$@.tmp,$$@)")
 endef
 $(foreach pair,$(SAMPLE_PAIRS),\
 	$(eval $(call filter_lancet-tumor-normal,$(tumor.$(pair)),$(normal.$(pair)))))

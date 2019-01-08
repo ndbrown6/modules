@@ -1,9 +1,9 @@
 #!/usr/bin/env Rscript
 
-suppressPackageStartupMessages(library("optparse"));
-suppressPackageStartupMessages(library("copynumber"));
-suppressPackageStartupMessages(library("colorspace"));
-suppressPackageStartupMessages(library("ASCAT"));
+suppressPackageStartupMessages(library("optparse"))
+suppressPackageStartupMessages(library("copynumber"))
+suppressPackageStartupMessages(library("colorspace"))
+suppressPackageStartupMessages(library("ASCAT"))
 
 if (!interactive()) {
     options(warn = -1, error = quote({ traceback(); q('no', status = 1) }))
@@ -11,7 +11,12 @@ if (!interactive()) {
 
 args_list <- list(make_option("--type", default = NA, type = 'character', help = "type of analysis"),
 				  make_option("--file_in", default = NA, type = 'character', help = "input file name"),
-				  make_option("--file_out", default = NA, type = 'character', help = "output file name"))
+				  make_option("--file_out", default = NA, type = 'character', help = "output file name"),
+				  make_option("--gamma", default = NA, type = 'numeric', help = "gamma parameter in pcf"),
+				  make_option("--nlog2", default = NA, type = 'numeric', help = "number of clusters in Log2 ratio"),
+				  make_option("--nbaf", default = NA, type = 'numeric', help = "number of clusters in BAF"),
+				  make_option("--rho", default = NA, type = 'numeric', help = "purity for ASCAT"),
+				  make_option("--psi", default = NA, type = 'numeric', help = "ploidy for ASCAT"))
 				  
 parser <- OptionParser(usage = "%prog", option_list = args_list)
 arguments <- parse_args(parser, positional_arguments = T)
@@ -116,6 +121,8 @@ if (opt$type=="log2") {
 	dev.off()
 
 } else if (opt$type=="aspcf") {
+
+	gamma = ifelse(is.na(as.numeric(opt$gamma)), 70, as.numeric(opt$gamma))
 	
 	CN_and_BAF = out2$jointseg[,c("chrom", "maploc", "cnlr", "vafT"),drop=FALSE]
 	index = out2$jointseg[,"het"]==1
@@ -123,11 +130,14 @@ if (opt$type=="log2") {
 	colnames(CN_and_BAF) = c("Chromosome", "Position", "Log2Ratio", "BAF")
 	index = CN_and_BAF[,"BAF"]>0.5
 	CN_and_BAF[index,"BAF"] = 1 - CN_and_BAF[index,"BAF"]
-	tmp = multipcf(data=winsorize(data=CN_and_BAF, method="mad", tau=2.5, k=25, verbose=FALSE), gamma=70, fast=FALSE, verbose=FALSE)
+	tmp = multipcf(data=winsorize(data=CN_and_BAF, method="mad", tau=2.5, k=25, verbose=FALSE), gamma=gamma, fast=FALSE, verbose=FALSE)
 	colnames(tmp) = c("Chromosome", "Arm", "Start", "End", "N", "Log2Ratio", "BAF")
 	save(CN_and_BAF, tmp, file=opt$file_out)
 
 } else if (opt$type=="plot-aspcf") {
+
+	nlog2 = ifelse(is.na(as.numeric(opt$nlog2)), 10, as.numeric(opt$nlog2))
+	nbaf = ifelse(is.na(as.numeric(opt$nbaf)), 15, as.numeric(opt$nbaf))
 
 	'prunesegments.cn' <- function(x, n=10)
 	{
@@ -151,7 +161,7 @@ if (opt$type=="log2") {
 		return(x)
 	}
 
-	'prunesegments.baf' <- function(x, n=10)
+	'prunesegments.baf' <- function(x, n=15)
 	{
 		cnm = matrix(NA, nrow=nrow(x), ncol=nrow(x))
 		for (j in 1:nrow(x)) {
@@ -172,8 +182,8 @@ if (opt$type=="log2") {
 		}
 		return(x)
 	}
-	tmp = prunesegments.cn(x=tmp, n=15)
-	tmp = prunesegments.baf(x=tmp, n=20)
+	tmp = prunesegments.cn(x=tmp, n=nlog2)
+	tmp = prunesegments.baf(x=tmp, n=nbaf)
 	
 	end = NULL
 	for (j in 1:23) {
@@ -225,6 +235,15 @@ if (opt$type=="log2") {
 	dev.off()
 	
 } else if (opt$type=="run-ascat") {
+	
+	nlog2 = ifelse(is.na(as.numeric(opt$nlog2)), 10, as.numeric(opt$nlog2))
+	nbaf = ifelse(is.na(as.numeric(opt$nbaf)), 15, as.numeric(opt$nbaf))
+	rho = as.numeric(opt$rho)
+	psi = as.numeric(opt$psi)
+	if (is.na(rho) | is.na(psi)) {
+		rho = NA
+		psi = NA
+	}
 
 	'prunesegments.cn' <- function(x, n=10)
 	{
@@ -269,8 +288,8 @@ if (opt$type=="log2") {
 		}
 		return(x)
 	}
-	tmp = prunesegments.cn(x=tmp, n=15)
-	tmp = prunesegments.baf(x=tmp, n=20)
+	tmp = prunesegments.cn(x=tmp, n=nlog2)
+	tmp = prunesegments.baf(x=tmp, n=nbaf)
 	
 	Tumor_LogR = as.numeric(CN_and_BAF[,"Log2Ratio"])
 	Tumor_BAF = as.numeric(CN_and_BAF[,"BAF"])
@@ -298,21 +317,21 @@ if (opt$type=="log2") {
 			    gender=gender,
 			    sexchromosomes=sexchromosomes)
 	
-	tmp3 = try(runASCAT(lrr=tmp2$Tumor_LogR,
-                        baf=tmp2$Tumor_BAF,
-                        lrrsegmented=tmp2$Tumor_LogR_segmented,
-                        bafsegmented=tmp2$Tumor_BAF_segmented,
-                        gender=tmp2$gender,
-                        SNPpos=tmp2$SNPpos,
-                        chromosomes=tmp2$chromosomes,
-                        chrnames=tmp2$chrnames,
-                        sexchromosomes=tmp2$sexchromosomes,
-                        failedqualitycheck=FALSE,
-                        distance = opt$file_out,
-                        copynumberprofile = NULL,
-                        nonroundedprofile = NULL, 
-                        aberrationreliability = NULL,
-                        gamma = 1, rho_manual = NA, psi_manual = NA, y_limit = 3, circos = NA))
+    tmp3 = try(runASCAT(lrr=tmp2$Tumor_LogR,
+        	                baf=tmp2$Tumor_BAF,
+        	                lrrsegmented=tmp2$Tumor_LogR_segmented,
+        	                bafsegmented=tmp2$Tumor_BAF_segmented,
+        	                gender=tmp2$gender,
+        	                SNPpos=tmp2$SNPpos,
+        	                chromosomes=tmp2$chromosomes,
+        	                chrnames=tmp2$chrnames,
+        	                sexchromosomes=tmp2$sexchromosomes,
+        	                failedqualitycheck=FALSE,
+        	                distance = opt$file_out,
+        	                copynumberprofile = NULL,
+        	                nonroundedprofile = NULL, 
+        	                aberrationreliability = NULL,
+        	                gamma = 1, rho_manual = rho, psi_manual = psi, y_limit = 3, circos = NA))
                         
     if (!("try-error" %in% is(tmp3))) {
         purity = tmp3$rho
@@ -366,7 +385,7 @@ if (opt$type=="log2") {
 	col = "grey80"
 	pdf(file=opt$file_out, height=7*10/7*2/3, width=7*20/7)
 	par(mar=c(5, 5, 4, 2)+.1)
-	plot(CN[,"pos"], CN[,"Log2Ratio"], type="p", pch=".", cex=1.5, col=col, axes=FALSE, frame=TRUE, xlab="", ylab="", main="", ylim=c(-2,2))
+	plot(CN[,"pos"], CN[,"Log2Ratio"], type="p", pch=".", cex=1.5, col=col, axes=FALSE, frame=TRUE, xlab="", ylab="", main="", ylim=c(-4,4))
  	for (j in 1:nrow(tmp)) {
  		lines(x=c(tmp[j,"Start"], tmp[j,"End"]), y=rep(tmp[j,"Log2Ratio"],2), lty=1, lwd=2.75, col="red")
  	}
