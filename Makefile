@@ -158,7 +158,7 @@ strelka :
 TARGETS += scalpel
 scalpel :
 	$(call RUN_MAKE,modules/variant_callers/somatic/scalpel.mk)
-    
+
 TARGETS += lancet
 lancet :
 	$(call RUN_MAKE,modules/variant_callers/somatic/lancet.mk)
@@ -615,6 +615,9 @@ TARGETS += mutation_summary
 mutation_summary :
 	$(call RUN_MAKE,modules/summary/mutationSummary.mk)
 
+TARGETS += delmh_summary
+delmh_summary :	
+	$(call RUN_MAKE,modules/summary/delmh_summary.mk)
 
 #==================================================
 # annotations
@@ -672,7 +675,7 @@ cravat_annotation :
 TARGETS += cravat_summary
 cravat_summary :
 	$(call RUN_MAKE,modules/test/annotations/cravat_summary.mk)
-	
+
 #==================================================
 # alpha testing
 #==================================================
