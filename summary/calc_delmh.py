@@ -1,7 +1,8 @@
+#!/usr/bin/env python
+
 # Calculate deletion with microhomogoy from tsv/all.somatic_indels.tsv
 #   Input: tsv/all.somatic_indels.tsv
 #   Output: tsv/all.delmh_found.tsv
-
 import os, argparse
 import numpy as np
 import pandas as pd
