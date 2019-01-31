@@ -65,7 +65,7 @@ endif
 # indices
 # if bam file is a symlink, need to create a symlink to index
 %.bam.bai : %.bam
-	$(call RUN,-c -s 4G -m 8G,"$(SAMTOOLS) index $<")
+	$(call RUN,-c -s 36G -m 48G -w 7200,"$(SAMTOOLS) index $<")
 
 %.bai : %.bam.bai
 	$(INIT) cp $< $@
@@ -85,7 +85,7 @@ endif
 
 # filter
 %.filtered.bam : %.bam
-	$(call RUN,-s 6G -m 7G,"$(SAMTOOLS) view -bF $(BAM_FILTER_FLAGS) $< > $@ && $(RM) $<")
+	$(call RUN,-s 36G -m 48G -w 7200,"$(SAMTOOLS) view -bF $(BAM_FILTER_FLAGS) $< > $@ && $(RM) $<")
 
 # Remove reads mapping to chromomsomes prefixed with mouse, used for PDX
 # combined reference alignment. Filters mouse reads.
@@ -97,13 +97,13 @@ endif
 
 # recalibrate base quality
 %.recal_report.grp : %.bam %.bai
-	$(call RUN,-s 15G -m 15G,"$(call GATK_MEM2,7G) -T BaseRecalibrator -R $(REF_FASTA) $(BAM_BASE_RECAL_OPTS) -I $< -o $@")
+	$(call RUN,-s 36G -m 48G -w 7200,"$(call GATK_MEM2,8G) -T BaseRecalibrator -R $(REF_FASTA) $(BAM_BASE_RECAL_OPTS) -I $< -o $@")
 
 #%.sorted.bam : %.bam
 #	$(call RUN,-n 4 -s 3G -m 3G,"$(SAMTOOLS2) sort -m 2.8G -o $@ -O bam --reference $(REF_FASTA) -@ 4 $<")
 
 %.sorted.bam : %.bam
-	$(call RUN,-s 30G -m 30G,"$(call SORT_SAM_MEM,19G,4500000) I=$< O=$@ SO=coordinate VERBOSITY=ERROR && $(RM) $<")
+	$(call RUN,-s 30G -m 30G -w 7200,"$(call SORT_SAM_MEM,19G,4500000) I=$< O=$@ SO=coordinate VERBOSITY=ERROR && $(RM) $<")
 
 
 #sort only if necessary
@@ -118,7 +118,7 @@ endif
 
 # mark duplicates
 %.markdup.bam : %.bam
-	$(call RUN,-s 22G -m 22G,"$(MKDIR) metrics; $(call MARK_DUP_MEM,10G) I=$< O=$@ METRICS_FILE=metrics/$(call strip-suffix,$(@F)).dup_metrics.txt && $(RM) $<")
+	$(call RUN,-s 36G -m 48G -w 7200,"$(MKDIR) metrics; $(call MARK_DUP_MEM,10G) I=$< O=$@ METRICS_FILE=metrics/$(call strip-suffix,$(@F)).dup_metrics.txt && $(RM) $<")
 
 %.rmdup.bam : %.bam
 	$(call RUN,-s 4G -m 7G,"$(SAMTOOLS) rmdup $< $@ && $(RM) $<")
@@ -139,10 +139,10 @@ ifeq ($(SPLIT_CHR),true)
 # $(eval $(call chr-target-aln,chromosome))
 define chr-target-realn
 %.$1.chr_split.intervals : %.bam %.bam.bai
-	$$(call RUN,-n 4 -s 4G -m 4G,"$$(call GATK_MEM2,5G) -T RealignerTargetCreator \
+	$$(call RUN,-n 8 -s 4G -m 6G -w 7200,"$$(call GATK_MEM2,5G) -T RealignerTargetCreator \
 		-I $$(<) \
 		-L $1 \
-		-nt 4 -R $$(REF_FASTA)  -o $$@ $$(BAM_REALN_TARGET_OPTS)")
+		-nt 8 -R $$(REF_FASTA)  -o $$@ $$(BAM_REALN_TARGET_OPTS)")
 endef
 $(foreach chr,$(CHROMOSOMES),$(eval $(call chr-target-realn,$(chr))))
 
@@ -152,24 +152,24 @@ $(foreach chr,$(CHROMOSOMES),$(eval $(call chr-target-realn,$(chr))))
 # $(eval $(call chr-aln,chromosome))
 define chr-realn
 %.$(1).chr_realn.bam : %.bam %.$(1).chr_split.intervals %.bam.bai
-	$$(call RUN,-s 16G -m 16G,"if [[ -s $$(word 2,$$^) ]]; then $$(call GATK_MEM2,4G) -T IndelRealigner \
+	$$(call RUN,-s 32G -m 32G -w 7200,"if [[ -s $$(word 2,$$^) ]]; then $$(call GATK_MEM2,8G) -T IndelRealigner \
 	-I $$(<) -R $$(REF_FASTA) -L $1 -targetIntervals $$(word 2,$$^) \
 	-o $$(@) $$(BAM_REALN_OPTS); \
-	else $$(call GATK_MEM2,8G) -T PrintReads -R $$(REF_FASTA) -I $$< -L $1 -o $$@ ; fi")
+	else $$(call GATK_MEM2,16G) -T PrintReads -R $$(REF_FASTA) -I $$< -L $1 -o $$@ ; fi")
 endef
 $(foreach chr,$(CHROMOSOMES),$(eval $(call chr-realn,$(chr))))
 
 # merge sample realn chromosome bams
 %.realn.bam : $(foreach chr,$(CHROMOSOMES),%.$(chr).chr_realn.bam) $(foreach chr,$(CHROMOSOMES),%.$(chr).chr_realn.bai)
-	$(call RUN,-n 2 -s 10G -m 11G,"$(MERGE_SAMS) $(foreach i,$(filter %.bam,$^), I=$(i)) SORT_ORDER=coordinate O=$@ USE_THREADING=true && $(RM) $^ $(@:.realn.bam=.bam)")
+	$(call RUN,-n 6 -s 10G -m 12G -w 7200,"$(MERGE_SAMS) $(foreach i,$(filter %.bam,$^), I=$(i)) SORT_ORDER=coordinate O=$@ USE_THREADING=true && $(RM) $^ $(@:.realn.bam=.bam)")
 
 # merge sample recal chromosome bams
 %.recal.bam : $(foreach chr,$(CHROMOSOMES),%.$(chr).chr_recal.bam) $(foreach chr,$(CHROMOSOMES),%.$(chr).chr_recal.bai)
-	$(call RUN,-n 2 -s 10G -m 11G,"$(MERGE_SAMS) $(foreach i,$(filter %.bam,$^), I=$(i)) SORT_ORDER=coordinate O=$@ USE_THREADING=true && $(RM) $^ $(@:.recal.bam=.bam)")
+	$(call RUN,-n 6 -s 10G -m 12G -w 7200,"$(MERGE_SAMS) $(foreach i,$(filter %.bam,$^), I=$(i)) SORT_ORDER=coordinate O=$@ USE_THREADING=true && $(RM) $^ $(@:.recal.bam=.bam)")
 
 define chr-recal
 %.$1.chr_recal.bam : %.bam %.recal_report.grp
-	$$(call RUN,-s 11G -m 15G,"$$(call GATK_MEM2,6G) -T PrintReads -L $1 -R $$(REF_FASTA) -I $$< -BQSR $$(<<) -o $$@")
+	$$(call RUN,-s 32G -m 48G -w 7200,"$$(call GATK_MEM2,8G) -T PrintReads -L $1 -R $$(REF_FASTA) -I $$< -BQSR $$(<<) -o $$@")
 endef
 $(foreach chr,$(CHROMOSOMES),$(eval $(call chr-recal,$(chr))))
 
@@ -177,7 +177,7 @@ else # no splitting by chr
 
 # recalibration
 %.recal.bam : %.bam %.recal_report.grp
-	$(call RUN,-s 14G -m 15G,"$(call GATK_MEM2,7G) -T PrintReads -R $(REF_FASTA) -I $< -BQSR $(word 2,$^) -o $@ && $(RM) $<")
+	$(call RUN,-s 14G -m 15G -w 7200,"$(call GATK_MEM2,7G) -T PrintReads -R $(REF_FASTA) -I $< -BQSR $(word 2,$^) -o $@ && $(RM) $<")
 
 %.realn.bam : %.bam %.intervals %.bam.bai
 	if [[ -s $(word 2,$^) ]]; then $(call RUN,-s 16G -m 16G,"$(call GATK_MEM2,7G) -T IndelRealigner \
