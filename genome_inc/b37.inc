@@ -46,8 +46,8 @@ ifeq ($(PDX),true)
 BWAMEM_REF_FASTA ?= $(REF_DIR)/pdx/combined_Mus_musculus_GRCm38_human_g1k_v37.fasta
 endif
 
-REF_FASTA ?= $(REF_DIR)/GATK_bundle/2.3/human_g1k_v37.fasta
-NOCHR_REF_FASTA ?= $(REF_DIR)/GATK_bundle/2.3/human_g1k_v37.fasta
+REF_FASTA ?= $(REF_DIR)/b37_dmp/b37.fasta
+NOCHR_REF_FASTA ?= $(REF_DIR)/b37_dmp/b37.fasta
 CHR_REF_FASTA ?= $(REF_DIR)/ucsc_gatk_bundle_2.8/ucsc.hg19.fasta
 REF_2BIT ?= $(REF_DIR)/GATK_bundle/2.3/human_g1k_v37.2bit
 DBSNP ?= $(REF_DIR)/dbsnp_138.b37.gmaf.vcf.gz
@@ -100,7 +100,7 @@ ANNOVAR_DB = $(HOME)/share/usr/annovar/humandb
 HISAT_REF = $(HOME)/share/reference/hisat/grch37_snp_tran/genome_snp_tran
 
 HOTSPOT_VCF_DIR = modules/reference/hotspots
-HOTSPOT_VCF.ext = $(HOTSPOT_VCF_DIR)/hotspot-v3.vcf.gz
+HOTSPOT_VCF.ext = $(HOTSPOT_VCF_DIR)/hotspot-v2.vcf.gz
 HOTSPOT_VCF.int = $(HOTSPOT_VCF_DIR)/hotspot-v1.vcf.gz
 
 HAPLOTYPE_INSUF_BED ?= modules/reference/gene_lists/haplo_insuff_genes.bed
