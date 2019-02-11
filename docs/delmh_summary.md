@@ -20,6 +20,16 @@
 ```
 
 # Error
+  1. This targets need to be submitted on head node; submitting from
+  cluster node can result in some temp file not read errors etc.
+
+  2. all.somatic_indels.tsv has different headers than the
+     mutation_summary:
+        in all.somatic_indels.tsv:
+            - SAMPLE.TUMOR => corresponds to TUMOR_SAMPLE
+            - SAMPLE.NORMAL =>      .........NORMAL_SAMPLE
+     These fields names may need to be recoded before using
+     mutation_summary as input.
 
 # Examples
-    `make delm_summary`  # This will generate all 3 output 
+    `make delmh_summary`  # This will generate all 3 output 
