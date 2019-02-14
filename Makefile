@@ -341,6 +341,10 @@ cnvkit_qc :
 # structural variant callers
 #==================================================
 
+TARGETS += svaba
+svabaTN :
+	$(call RUN_MAKE,modules/sv_callers/svabaTN.mk)
+
 TARGETS += star_fusion
 star_fusion:
 	$(call RUN_MAKE,modules/sv_callers/starFusion.mk)
