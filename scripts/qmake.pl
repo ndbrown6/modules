@@ -10,7 +10,8 @@ my $cwd = getcwd;
 #my $err_email_addrs = "qmake.error\@raylim.mm.st charlottekyng+qmake.error\@gmail.com";
 #my $start_email_addrs = "qmake.start\@raylim.mm.st charlottekyng+qmake.start\@gmail.com";
 
-my $err_slack = "pipeline_error";
+#my $err_slack = "pipeline_error";
+my $err_slack = "isaac_test";
 my $fin_slack = "pipeline_finished";
 
 my %slack_map = (
