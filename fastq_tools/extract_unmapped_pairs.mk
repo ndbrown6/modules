@@ -1,3 +1,4 @@
+# This target extract unmapped read-pairs from the unmapped reads
 include modules/Makefile.inc
 
 LOGDIR ?= log/extract_unmapped_pairs.$(NOW)

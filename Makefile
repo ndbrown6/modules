@@ -455,6 +455,10 @@ TARGETS += extract_unmapped_pairs
 extract_unmapped_pairs :
 	$(call RUN_MAKE,modules/fastq_tools/extract_unmapped_pairs.mk)
 
+TARGETS += extract_any_unmapped_pairs
+extract_any_unmapped_pairs :
+	$(call RUN_MAKE,modules/fastq_tools/extract_any_unmapped_pairs.mk)
+
 TARGETS += bam_to_fasta
 bam_to_fasta :
 	$(call RUN_MAKE,modules/fastq_tools/bamtoFasta.mk)
