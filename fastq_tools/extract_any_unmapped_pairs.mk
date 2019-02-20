@@ -25,7 +25,7 @@ extracted_reads/any_unmapped_pairs/%.bam : extracted_reads/unmapped_pairs/%.txt
 
 ## 3. Convert the extracted bam files to fastq.gz format
 extracted_reads/any_unmapped_pairs/%_1.fastq.gz extracted_reads/any_unmapped_pairs/%_2.fastq.gz : extracted_reads/any_unmapped_pairs/%.bam
-	$$(call RUN,-n 4 -s 4G -m 9G,"$(SAMTOOLS2) sort -T $$(<D)/$$* -O bam -n -@ 4 -m 6G $$< | $(SAMTOOLS2) fastq -f 1 -1 >(gzip -c > extracted_reads/any_unmapped_pairs/fastq/$$*.1.fastq.gz) -2 >(gzip -c > extracted_reads/any_unmapped_pairs/fastq/$$*.2.fastq.gz) -")
+	$$(call RUN,-n 4 -s 4G -m 9G,"$(SAMTOOLS2) sort -T $$(<D)/$$*.bam -O bam -n -@ 4 -m 6G $$< | $(SAMTOOLS2) fastq -f 1 -1 >(gzip -c > extracted_reads/any_unmapped_pairs/fastq/$$*.1.fastq.gz) -2 >(gzip -c > extracted_reads/any_unmapped_pairs/fastq/$$*.2.fastq.gz) -")
 
 	################## Previous code to convert to fastq
 	# $$(call RUN,-n 4 -s 4G -m 9G,"bamToFastq -i $$< -fq extracted_reads/unmapped_pairs/$$*_1.fastq -fq2 extracted_reads/unmapped_pairs/$$*_2.fastq")
