@@ -6,9 +6,10 @@
 
             `git clone https://github.com/jrflab/modules.git`
 
-            `perl modules/scripts/initProject.pl` or
+            `./modules/init_project`  or 
 
-                `modules/init_project` # a short cut for the same initProject.pl
+            `perl modules/scripts/initProject.pl` 
+
 
 # Getting started
     [wiki](https://github.com/jrflab/modules/wiki).
