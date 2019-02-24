@@ -9,7 +9,8 @@ LOGDIR ?= log/svabaTN.$(NOW)
 
 VPATH = bam
 CORES=8 ## set any number of cores
-SVABAREF=$(HOME)/share/reference/GATK_bundle/2.3/human_g1k_v37.fasta
+#SVABAREF=$(HOME)/share/reference/GATK_bundle/2.3/human_g1k_v37.fasta
+SVABAREF=$(REF_FASTA)
 DBSNP=/data/riazlab/lib/reference/svaba/dbsnp_indel.vcf
 
 svabaTN : $(foreach pair,$(SAMPLE_PAIRS),svaba/$(pair).svaba.somatic.indel.vcf)
