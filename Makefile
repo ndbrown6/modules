@@ -627,6 +627,9 @@ TARGETS += delmh_summary
 delmh_summary :	
 	$(call RUN_MAKE,modules/summary/delmh_summary.mk)
 
+TARGETS += delmh_summary_2callers
+delmh_summary :	
+	$(call RUN_MAKE,modules/summary/delmh_summary_2callers.mk)
 #==================================================
 # annotations
 #==================================================
