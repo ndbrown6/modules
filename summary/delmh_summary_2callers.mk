@@ -3,11 +3,11 @@ include modules/Makefile.inc
 #  -- this target will use only 2 callers as filters
 # the result is saved as tsv/delmh_summary.tsv 
 
-LOGDIR ?= log/delmh_summary.$(NOW)
-PHONY += delmh_summary
+LOGDIR ?= log/delmh_summary_2callers.$(NOW)
+PHONY += delmh_summary_2callers
 DEFAULT_ENV = $(HOME)/share/usr/anaconda-envs/jrflab-modules-0.1.4
 
-delmh_summary : tsv/delmh_summary.tsv
+delmh_summary_2callers : tsv/delmh_summary.tsv
 
 # step 3: summary of filtered delmh
 tsv/delmh_summary.tsv : tsv/delmh_filtered.tsv
