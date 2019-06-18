@@ -71,6 +71,10 @@ run_cnvkit :
 	$(MAKE) -f modules/copy_number/cnvkitfix.mk -j $(NUM_JOBS)
 	$(call RUN_MAKE,modules/copy_number/cnvkitplot.mk)
 	
+TARGETS += mosdepth_wgs
+mosdepth_wgs :
+	$(call RUN_MAKE,modules/copy_number/mosdepth_wgs.mk) 
+
 #==================================================
 # aligners
 #==================================================
