@@ -75,6 +75,9 @@ TARGETS += mosdepth_wgs
 mosdepth_wgs :
 	$(call RUN_MAKE,modules/copy_number/mosdepth_wgs.mk) 
 
+TARGETS += indexcovTN
+indexcovTN :
+	$(call RUN_MAKE,modules/copy_number/indexcovTN.mk) 
 #==================================================
 # aligners
 #==================================================
