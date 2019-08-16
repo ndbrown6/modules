@@ -16,13 +16,12 @@ my $fin_slack = "pipeline_finished";
 
 my %slack_map = (
     limr => "raylim",
-    burkek => "burkek",
-    schizasm => "schizasm",
-    ngk1 => "charlottekyng",
     debruiji => "debruiji",
-    defilipm => "maria",
-    bermans => "hxrts",
-    gularter => "rjgularte"
+    brownd7 => "brownd7",
+    selenicp => "selenicp",
+    lees19 => "lees19",
+    ferrandl => "ferrandl",
+    dacruzpa => "dacruzpa"
 );
 
 
@@ -150,17 +149,13 @@ do {
                 $mail_subject = "**FINAL** $mail_subject";
             }
             $mail_subject .= " Attempt " . ($n + 1) if $n > 0; 
-            #open(MAIL, "| mail -s '$mail_subject' $addrs");
-            #print MAIL "Return code: $retcode\n";
-            #print MAIL "$mail_msg";
-            #close MAIL;
         }
 
         my $pipeline_channel_msg = "\@${slackname} $project_name :";
         if ($opt{s} && ($retcode == 0 || $n == 0 || $n + 1 == $attempts)) {
             if ($retcode == 0) {
                 # op success
-                my $slack_msg = "*COMPLETE* $name :metal:";
+                my $slack_msg = "*COMPLETE* $name :ok_hand:";
                 &slack($fin_slack, "$pipeline_channel_msg $slack_msg");
                 &slack($opt{c}, $slack_msg) if $opt{c};
             } else {
@@ -168,7 +163,7 @@ do {
                 my $slack_msg = "*FAILURE* $cwd/$logfile";
                 if ($n + 1 == $attempts) {
                     # final attempt
-                    $slack_msg = ":finnadie: $slack_msg";
+                    $slack_msg = ":troll: $slack_msg";
                     &slack($opt{c}, $slack_msg) if $opt{c};
                 }
                 &slack($err_slack, "$pipeline_channel_msg $slack_msg");

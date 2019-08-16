@@ -8,7 +8,7 @@ include modules/config.inc
 
 export
 
-NUM_ATTEMPTS ?= 20
+NUM_ATTEMPTS ?= 10
 NOW := $(shell date +"%F")
 MAKELOG = log/$(@).$(NOW).log
 
@@ -35,41 +35,6 @@ somatic_indels:
 TARGETS += somatic_variants
 somatic_variants:
 	$(call RUN_MAKE,modules/variant_callers/somatic/somaticVariants.mk)
-
-TARGETS += copynumber_summary
-copynumber_summary:
-	$(MAKE) -f modules/copy_number/genomealtered.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/copy_number/lstscore.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/copy_number/ntaiscore.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/copy_number/myriadhrdscore.mk -j $(NUM_JOBS)
-	$(call RUN_MAKE,modules/summary/genomesummary.mk)
-	
-TARGETS += hotspot_summary
-hotspot_summary:
-	$(MAKE) -f modules/variant_callers/genotypehotspots.mk -j $(NUM_JOBS)
-	$(call RUN_MAKE,modules/summary/hotspotsummary.mk)
-	
-TARGETS += viral_detection
-viral_detection:
-	$(MAKE) -f modules/fastq_tools/extractReads.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/fastq_tools/bamtoFasta.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/fastq_tools/blastReads.mk -j $(NUM_JOBS)
-	$(call RUN_MAKE,modules/virus/kronaClassify.mk)
-	
-TARGETS += multisample_pyclone
-multisample_pyclone:
-	$(MAKE) -f modules/copy_number/ascat.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/variant_callers/sufammultisample.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/clonality/setuppyclone.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/clonality/runpyclone.mk -j $(NUM_JOBS)
-	$(call RUN_MAKE,modules/clonality/plotpyclone.mk)
-	
-TARGETS += run_cnvkit
-run_cnvkit :
-	$(MAKE) -f modules/copy_number/cnvkitcoverage.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/copy_number/cnvkitreference.mk -j $(NUM_JOBS)
-	$(MAKE) -f modules/copy_number/cnvkitfix.mk -j $(NUM_JOBS)
-	$(call RUN_MAKE,modules/copy_number/cnvkitplot.mk)
 	
 TARGETS += mosdepth_wgs
 mosdepth_wgs :
@@ -78,6 +43,7 @@ mosdepth_wgs :
 TARGETS += indexcovTN
 indexcovTN :
 	$(call RUN_MAKE,modules/copy_number/indexcovTN.mk) 
+
 #==================================================
 # aligners
 #==================================================
@@ -228,10 +194,10 @@ jsm :
 
 TARGETS += sufam
 sufam:
-	$(call RUN_MAKE,modules/variant_callers/sufamSampleSet.mk)
+	$(call RUN_MAKE,modules/variant_callers/sufamsampleset.mk)
 	
-TARGETS += sufam_multisample
-sufam_multisample:
+TARGETS += sufam_summary
+sufam_summary:
 	$(call RUN_MAKE,modules/variant_callers/sufammultisample.mk)
 
 
@@ -242,10 +208,6 @@ sufam_multisample:
 TARGETS += facets
 facets :
 	$(call RUN_MAKE,modules/copy_number/facets.mk)
-	
-TARGETS += facets_plot
-facets_plot :
-	$(call RUN_MAKE,modules/copy_number/facetsplot.mk)
 	
 TARGETS += ascat
 ascat :
@@ -295,25 +257,13 @@ TARGETS += gistic
 gistic :
 	$(call RUN_MAKE,modules/copy_number/gistic.mk)
 	
-TARGETS += genome_altered
-genome_altered :
-	$(call RUN_MAKE,modules/copy_number/genomealtered.mk)
-	
-TARGETS += lst_score
-lst_score :
-	$(call RUN_MAKE,modules/copy_number/lstscore.mk)
-	
-TARGETS += ntai_score
-ntai_score :
-	$(call RUN_MAKE,modules/copy_number/ntaiscore.mk)
-	
-TARGETS += myriad_score
-myriad_score :
-	$(call RUN_MAKE,modules/copy_number/myriadhrdscore.mk)
-	
 TARGETS += snp6
 snp6 :
 	$(call RUN_MAKE,modules/snp6/snp6.mk)
+	
+TARGETS += cnv_kit
+cnv_kit :
+	$(call RUN_MAKE,modules/test/workflows/cnvkit.mk)
 
 TARGETS += cnvkit_coverage
 cnvkit_coverage :
@@ -342,6 +292,38 @@ cnvkit_pca :
 TARGETS += cnvkit_qc
 cnvkit_qc :
 	$(call RUN_MAKE,modules/copy_number/cnvkitqc.mk)
+	
+TARGETS += qdna_seq
+qdna_seq :
+	$(call RUN_MAKE,modules/test/workflows/qdnaseq.mk)
+	
+TARGETS += qdnaseq_extract_test
+qdnaseq_extract_test:
+	$(call RUN_MAKE,modules/test/copy_number/qdnaseqextract.mk)
+	
+TARGETS += qdnaseq_copynumber_test
+qdnaseq_copynumber_test:
+	$(call RUN_MAKE,modules/test/copy_number/qdnaseqcopynumber.mk)
+	
+TARGETS += copynumber_summary
+copynumber_summary:
+	$(call RUN_MAKE,modules/test/workflows/copynumber_summary.mk)
+	
+TARGETS += genome_altered
+genome_altered :
+	$(call RUN_MAKE,modules/copy_number/genomealtered.mk)
+	
+TARGETS += lst_score
+lst_score :
+	$(call RUN_MAKE,modules/copy_number/lstscore.mk)
+	
+TARGETS += ntai_score
+ntai_score :
+	$(call RUN_MAKE,modules/copy_number/ntaiscore.mk)
+	
+TARGETS += myriad_score
+myriad_score :
+	$(call RUN_MAKE,modules/copy_number/myriadhrdscore.mk)
 
 
 #==================================================
@@ -478,10 +460,6 @@ TARGETS += merge_bam
 merge_bam :
 	$(call RUN_MAKE,modules/bam_tools/mergeBam.mk)
 
-TARGETS += check_bam
-check_bam :
-	$(call RUN_MAKE,modules/bam_tools/checkBam.mk)
-	
 
 #==================================================
 # quality control
@@ -567,26 +545,30 @@ TARGETS += absolute_seq
 absolute_seq :
 	$(call RUN_MAKE,modules/clonality/absoluteSeq.mk)
 	
-TARGETS += setup_pyclone
-setup_pyclone :
-	$(call RUN_MAKE,modules/clonality/setuppyclone.mk)
-
-TARGETS += run_pyclone
-run_pyclone :
-	$(call RUN_MAKE,modules/clonality/runpyclone.mk)
+TARGETS += ms_pyclone
+ms_pyclone :
+	$(call RUN_MAKE,modules/test/workflows/mspyclone.mk)
 	
-TARGETS += plot_pyclone
-plot_pyclone :
-	$(call RUN_MAKE,modules/clonality/plotpyclone.mk)
-
+TARGETS += ss_pyclone
+ss_pyclone :
+	$(call RUN_MAKE,modules/test/workflows/pyclone.mk)
 	
+
 #==================================================
 # mutational signatures
 #==================================================
 
 TARGETS += emu
 emu :
-	$(call RUN_MAKE,modules/mut_sigs/emu.mk)
+	$(call RUN_MAKE,modules/signatures/emu.mk)
+	
+TARGETS += mut_sig
+mut_sig :
+	$(call RUN_MAKE,modules/signatures/mut_sig.mk)
+	
+TARGETS += deconstruct_sigs
+deconstruct_sigs :
+	$(call RUN_MAKE,modules/signatures/deconstruct_sigs.mk)
 
 
 #==================================================
@@ -605,9 +587,30 @@ TARGETS += virus_detection_bowtie2
 virus_detection_bowtie2 :
 	$(call RUN_MAKE,modules/virus/virus_detection_bowtie2.mk)
 	
+TARGETS += viral_detection
+viral_detection:
+	$(call RUN_MAKE,modules/test/workflows/viral_detection.mk)
+	
 TARGETS += krona_classify
 krona_classify :
 	$(call RUN_MAKE,modules/virus/krona_classify.mk)
+	
+TARGETS += fetch_impact
+fetch_impact :
+	$(call RUN_MAKE,modules/test/workflows/fetchimpact.mk)
+
+
+#==================================================
+# phylogeny
+#==================================================
+
+TARGETS += medicc
+medicc :
+	$(call RUN_MAKE,modules/test/workflows/medicc.mk)
+	
+TARGETS += pratchet
+pratchet :
+	$(call RUN_MAKE,modules/test/workflows/pratchet.mk)
 
 
 #==================================================
@@ -617,10 +620,6 @@ krona_classify :
 TARGETS += recurrent_mutations
 recurrent_mutations :
 	$(call RUN_MAKE,modules/recurrent_mutations/report.mk)
-
-TARGETS += mutsig_report
-mutsig_report :
-	$(call RUN_MAKE,modules/mut_sigs/mutSigReport.mk)
 	
 TARGETS += genome_summary
 genome_summary :
@@ -628,7 +627,11 @@ genome_summary :
 
 TARGETS += mutation_summary
 mutation_summary :
-	$(call RUN_MAKE,modules/summary/mutationSummary.mk)
+	$(call RUN_MAKE,modules/summary/mutationsummary.mk)
+	
+TARGETS += cravat_summary
+cravat_summary :
+	$(call RUN_MAKE,modules/summary/cravat_summary.mk)
 
 TARGETS += delmh_summary
 delmh_summary :	
@@ -652,12 +655,21 @@ ann_somatic_vcf:
 TARGETS += ann_vcf
 ann_vcf: 
 	$(call RUN_MAKE,modules/vcf_tools/annotateVcf.mk)
-
 	
+TARGETS += cravat_annotation
+cravat_annotation :
+	$(call RUN_MAKE,modules/test/workflows/cravat_annotation.mk)
+	
+TARGETS += cravat_annotate
+cravat_annotate :
+	$(call RUN_MAKE,modules/vcf_tools/cravat_annotation.mk)
+
+
 #==================================================
 # beta testing
 #==================================================
 
+<<<<<<< HEAD
 TARGETS += sufam_multisample_test
 sufam_multisample_test:
 	$(call RUN_MAKE,modules/test/variant_callers/sufammultisample.mk)
@@ -706,6 +718,15 @@ run_qdnaseq :
 TARGETS += config
 config :
 	./modules/scripts/configure.py
+
+TARGETS += hotspot_summary
+hotspot_summary:
+	$(MAKE) -f modules/variant_callers/genotypehotspots.mk -j $(NUM_JOBS)
+	$(call RUN_MAKE,modules/summary/hotspotsummary.mk)
+	
+#==================================================
+# alpha testing
+#==================================================
 
 TARGETS += samples
 samples :

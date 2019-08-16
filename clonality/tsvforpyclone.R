@@ -2,31 +2,51 @@
 
 suppressPackageStartupMessages(library("optparse"))
 suppressPackageStartupMessages(library("readr"))
+suppressPackageStartupMessages(library("dplyr"))
+suppressPackageStartupMessages(library("magrittr"))
 
-optList = list(make_option("--file_name", default = NULL, help = "file name"),
-			   make_option("--sample_name", default = NULL, help = "sample name"))
+optList = list(
+			   make_option("--sample_set", default = NULL, help = "sample set name"),
+			   make_option("--normal_samples", default = NULL, help = "normal sample names"),
+			   make_option("--min_depth", default = NA, help = "minimum depth to consider")
+			   )
 
 parser = OptionParser(usage = "%prog [options] mutation_file", option_list = optList)
 arguments = parse_args(parser, positional_arguments = T)
 opt = arguments$options
-mutation_summary = read_tsv(file=opt$file_name)
-col_names = colnames(mutation_summary)
-mutation_summary = data.frame(mutation_summary)
-colnames(mutation_summary) = col_names
-index = grep("qt", colnames(mutation_summary))
-flag = apply(mutation_summary[,index,drop=FALSE], 1, function(x) { sum(x==0)==0 })
-mutation_summary = mutation_summary[flag,,drop=FALSE]
-index = grep("q2", colnames(mutation_summary))
-flag = apply(mutation_summary[,index,drop=FALSE], 1, function(x) { sum(x==0)==0 })
-mutation_summary = mutation_summary[flag,,drop=FALSE]
 
-mutation_id = paste0(mutation_summary[,"Gene_Symbol"], "_", mutation_summary[,"HGVSp"])
-ref_counts = round((1-mutation_summary[,paste0("MAF_", opt$sample_name)])*mutation_summary[,paste0("DP_", opt$sample_name)])
-var_counts = round((mutation_summary[,paste0("MAF_", opt$sample_name)])*mutation_summary[,paste0("DP_", opt$sample_name)])
-var_counts[var_counts<5] = 0
-normal_cn = rep(2, length(mutation_id))
-minor_cn = rep(0, length(mutation_id))
-major_cn = mutation_summary[,paste0("qt_", opt$sample_name)]
-sample_summary = data.frame(mutation_id, ref_counts, var_counts, normal_cn, minor_cn, major_cn)
-write.table(sample_summary, paste0(gsub(".tsv", "/", gsub("sufam/", "pyclone/", opt$file_name)), opt$sample_name, ".tsv"), sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
+tumor_samples = unlist(strsplit(opt$sample_set, split="_", fixed=TRUE))
+normal_sample = unlist(strsplit(opt$normal_samples, split=" ", fixed=TRUE))
+normal_sample = tumor_samples[tumor_samples %in% normal_sample]
+tumor_samples = tumor_samples[!(tumor_samples %in% normal_sample)]
+min_depth = ifelse(is.na(opt$min_depth) | is.null(opt$min_depth) | opt$min_depth=="" | opt$min_depth==" ", 50, opt$min_depth)
 
+mutation_summary = read_tsv(file=paste0("sufam/", opt$sample_set, ".tsv"))
+index = apply(mutation_summary[,paste0("DP_", tumor_samples)], 1, function(x) {sum(x>=min_depth)})==length(tumor_samples)
+mutation_summary = mutation_summary[index,,drop=FALSE]
+index = apply(mutation_summary[,paste0("CALL_", tumor_samples)], 1, function(x) {sum(x==0)})==length(tumor_samples)
+mutation_summary = mutation_summary[!index,,drop=FALSE]
+
+for (i in 1:length(tumor_samples)) {
+	mutation_id = paste0(mutation_summary$Gene_Symbol, "_", mutation_summary$HGVSp)
+	fsq = mutation_summary %>%
+		  .[[paste0("MAF_", tumor_samples[i])]]
+	qt = mutation_summary %>%
+		  .[[paste0("qt_", tumor_samples[i])]]
+	q2 = mutation_summary %>%
+		  .[[paste0("q2_", tumor_samples[i])]]
+	q1 = qt - q2
+	n = mutation_summary %>%
+		.[[paste0("DP_", tumor_samples[i])]]
+	flag = mutation_summary %>%
+		   .[[paste0("CALL_", tumor_samples[i])]]
+	
+	fsq[flag==0] = 0
+	var_counts = round(fsq*n)
+	ref_counts = round((1-fsq)*n)
+	normal_cn = rep(2, length(mutation_id))
+	major_cn = q2
+	minor_cn = q1
+	sample_summary = data.frame(mutation_id, ref_counts, var_counts, normal_cn, minor_cn, major_cn)
+	write.table(sample_summary, paste0("pyclone/", opt$sample_set, "/", tumor_samples[i], ".tsv"), sep="\t", col.names=TRUE, row.names=FALSE, quote=FALSE, append=FALSE)
+}

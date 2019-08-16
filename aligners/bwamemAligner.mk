@@ -1,9 +1,3 @@
-# vim: set ft=make :
-# BWA-mem alignment of short reads
-# OPTIONS: NO_MARKDUP = true/false (default: false)
-# 		   EXTRACT_FASTQ = true/false (default: false)
-# 		   BAM_NO_RECAL = true/false (default: false)
-
 include modules/Makefile.inc
 include modules/variant_callers/gatk.inc
 include modules/aligners/align.inc
@@ -23,7 +17,6 @@ FASTQ_CHUNK_SEQ := $(shell seq 1 $(FASTQ_CHUNKS))
 FASTQUTILS = $(HOME)/share/usr/ngsutils/bin/fastqutils
 
 BWA_ALN_OPTS ?= -M
-#BWA_ALN_OPTS ?= -q 20
 BWAMEM_REF_FASTA ?= $(REF_FASTA)
 BWAMEM_THREADS = 12
 BWAMEM_MEM_PER_THREAD = $(if $(findstring true,$(PDX)),8G,6G)
@@ -41,7 +34,6 @@ bwamem : $(BWA_BAMS) $(addsuffix .bai,$(BWA_BAMS))
 bam/%.bam : bwamem/bam/%.bwamem.$(BAM_SUFFIX)
 	$(call RUN,,"ln -f $(<) $(@)")
 
-#$(call align-split-fastq,name,split-name,fastqs)
 define align-split-fastq
 bwamem/bam/$2.bwamem.bam : $3
 	$$(call RUN,-n $$(BWAMEM_THREADS) -s 4G -m $$(BWAMEM_MEM_PER_THREAD) -w 7200,"$$(BWA) mem -t $$(BWAMEM_THREADS) $$(BWA_ALN_OPTS) -R \"@RG\tID:$2\tLB:$1\tPL:$${SEQ_PLATFORM}\tSM:$1\" $$(BWAMEM_REF_FASTA) $$^ | $$(SAMTOOLS) view -bhS - > $$@")

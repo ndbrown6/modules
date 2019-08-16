@@ -33,10 +33,6 @@ FASTQC ?= $(PERL) $(HOME)/share/usr/FastQC/fastqc
 MUTECT_JAR ?= $(JARDIR)/muTect-1.1.7.jar
 BOWTIE ?= $(PERL) $(HOME)/share/usr/bowtie2-2.2.4/bowtie2
 BWA ?= bwa
-#PBWA ?= mpiexec $(HOME)/share/usr/bin/pBWA
-#GSNAP ?= $(HOME)/share/usr/bin/gsnap
-#GSNAP_REF ?= $(HOME)/share/references/gmapdb/
-#GSNAP_MAPS ?= $(GSNAP_REF)/$(REF)/$(REF).maps
 SAMTOOLS ?= samtools
 SAMTOOLS2 ?= samtools
 VCFUTILS ?= $(HOME)/share/usr/bin/vcfutils.pl
@@ -50,20 +46,15 @@ VCF_SORT ?= $(PERL) $(HOME)/share/usr/bin/vcfsorter.pl
 
 SNP_EFF_JAR ?= $(JARDIR)/snpEff-4.3.jar
 SNP_SIFT_JAR ?= $(JARDIR)/SnpSift-4.3.jar
-SNP_EFF_CONFIG ?= modules/snpEff.config
-#DB_NSFP ?= $(HOME)/share/reference/snpEff/dbNSFP2.4.txt.gz
+SNP_EFF_CONFIG ?= modules/config/snpEff.conf
 DB_NSFP ?= $(HOME)/share/reference/snpEff-4.1/dbNSFP3.0b1a.hg19.txt.gz
 NSFP_FIELDS ?= Uniprot_acc_Polyphen2 Uniprot_id_Polyphen2 Polyphen2_HVAR_score Polyphen2_HVAR_pred 1000Gp3_AF ESP6500_AA_AF ESP6500_EA_AF MutationAssessor_pred MutationAssessor_score MutationTaster_pred MutationTaster_score PROVEAN_pred ExAC_Adj_AF clinvar_rs clinvar_clnsig Interpro_domain
 
 CUFFLINKS ?= cufflinks
 CUFFCMP ?= cuffcompare
-#SNVMIX ?= $(HOME)/share/usr/bin/SNVMix2
-#BAM2FASTQ ?= $(HOME)/share/usr/bin/bam2fastq
-#QUALIMAP ?= $(HOME)/share/usr/qualimap/qualimap
 TOPHAT ?= tophat
 DEFUSE ?= $(PERL) $(HOME)/share/usr/defuse-0.6.1/scripts/defuse.pl
 
-#VARSCAN
 ONCOFUSE_JAR ?= $(HOME)/share/usr/oncofuse-1.0.9b2/Oncofuse.jar
 VARSCAN_JAR ?= $(JARDIR)/VarScan.v2.3.9.jar
 
@@ -80,12 +71,10 @@ RBIND ?= $(SCRIPTS_DIR)/rbind.R
 NORMAL_FILTER ?= $(PERL) $(SCRIPTS_DIR)/normalFilterVCF.pl
 SOMATIC_FILTER_VCF ?= $(PERL) $(SCRIPTS_DIR)/somaticFilterVCF.pl
 
-#JAVA_TMP := $(HOME)/tmp
 JAVA_BIN ?=  $(JAVA8_BIN)
 JAVA6_BIN ?= $(HOME)/share/usr/jdk1.6.0_45/bin/java
 JAVA7_BIN ?= $(HOME)/share/usr/jdk1.7.0_45/bin/java
 JAVA8_BIN ?= $(HOME)/share/usr/jdk1.8.0_121/bin/java
-#JAVA ?= /usr/bin/java $(JAVA_ARGS)
 
 GET_INSERT_SIZE ?= $(HOME)/share/usr/bin/getInsertSize.py
 
@@ -106,8 +95,8 @@ EMBL_MYSQLDB_PW = embl
 EMBL_MYSQLDB_DB = homo_sapiens_core_85_37
 endif
 ifeq ($(CLUSTER_ENGINE),LSF)
-MYSQLDB_HOST = lilac
-EMBL_MYSQLDB_HOST = lilac
+MYSQLDB_HOST = swan
+EMBL_MYSQLDB_HOST = swan
 EMBL_MYSQLDB_PORT = 38493
 EMBL_MYSQLDB_USER = embl
 EMBL_MYSQLDB_PW = embl
@@ -147,6 +136,36 @@ INDEL_FILTER_VCF = python modules/vcf_tools/indel_filter_vcf.py
 SNP_FILTER_VCF = python modules/vcf_tools/snp_filter_vcf.py
 
 MERGE_VCF = python modules/vcf_tools/merge_vcf.py
+
+ASCAT_ENV = $(HOME)/share/usr/anaconda-envs/ascat
+
+MEDICC_ENV = $(HOME)/share/usr/anaconda-envs/medicc
+MEDICC_VAR = $(MEDICC_ENV)/PROFILE
+MEDICC_BIN = $(MEDICC_ENV)/opt/medicc
+
+PHYLO_ENV = $(HOME)/share/usr/anaconda-envs/phylotools
+
+CNTILP_ENV = $(HOME)/share/usr/anaconda-envs/cnt-ilp
+CNTILP_CONF = $(CNTILP_ENV)/PROFILE
+CNTILP_BIN = $(CNTILP_ENV)/opt/CNT-ILP/build
+
+CNTMD_ENV = $(HOME)/share/usr/anaconda-envs/cnt-md
+CNTMD_CONF = $(CNTMD_ENV)/PROFILE
+CNTMD_BIN = $(CNTMD_ENV)/opt/CNT-MD/build
+
+MACHINA_ENV = $(HOME)/share/usr/anaconda-envs/machina
+MACHINA_VAR = $(MACHINA_ENV)/PROFILE
+MACHINA_BIN = $(MACHINA_ENV)/opt/machina/build
+
+HATCHET_ENV = $(HOME)/share/usr/anaconda-envs/hatchet
+HATCHET_VAR = $(HATCHET_ENV)/PROFILE
+HATCHET_BIN = $(HATCHET_ENV)/opt/machina/build
+
+DECONSTRUCTSIGS_ENV = $(HOME)/share/usr/anaconda-envs/deconstructsigs
+
+PHANGORN_ENV = $(HOME)/share/usr/anaconda-envs/phangorn
+
+FGBIO_ENV = $(HOME)/share/usr/anaconda-envs/fgbio-0.8.1
 
 endif
 CONFIG_INC = true

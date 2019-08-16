@@ -24,6 +24,8 @@ opt$rho = ifelse(is.na(as.numeric(opt$rho)), 1, as.numeric(opt$rho))
 opt$psi = ifelse(is.na(as.numeric(opt$psi)), 2, as.numeric(opt$psi))
 opt$gamma = ifelse(is.na(as.numeric(opt$gamma)), 1, as.numeric(opt$gamma))
 
+load("modules/copy_number/CytoBand.RData")
+
 'prunesegments.cn' <- function(x, n=10)
 {
 	cnm = matrix(NA, nrow=nrow(x), ncol=nrow(x))
@@ -52,31 +54,32 @@ if (opt$type=="raw") {
 	outfile = paste0("qdnaseq/copynumber/log2ratio/", opt$sample, ".pdf")
 	data = read.table(file=infile, header=FALSE, sep="\t", skip=1, stringsAsFactors=FALSE)[,c(1,2,3,5),drop=FALSE]
 	colnames(data) = c("Chromosome", "Start", "End", "Log2Ratio")
-	col = rep("#9F6986", nrow(data))
-	col[(data[,"Chromosome"]%%2)==1] = "#CECAC5"
-	pdf(file=outfile, width=18, height=7)
+	pdf(file=outfile, width=10, height=4.25)
 	par(mar=c(5, 5, 4, 2)+.1)
-	plot(data[,"Log2Ratio"], type="p", pch=".", cex=2, col=col, axes=FALSE, frame=TRUE, xlab="", ylab="", main="", ylim=c(-2,2))
-	axis(2, at = NULL, cex.axis = 1.15, las = 1)
-	mtext(side = 1, text = "Chromosome", line = 3, cex = 1.25)
-	mtext(side = 2, text = expression(Log[2]~"Ratio"), line = 3.15, cex = 1.25)
-	abline(v=1, col="goldenrod3")
-	abline(h=0, col="red")
-	for (j in 2:max(data[,"Chromosome"])) {
-	v = min(which(data[,"Chromosome"]==j))
-		abline(v=v, col="goldenrod3")
-	}
-	abline(v=max(nrow(data)), col="goldenrod3")
-	start = NULL
 	end = NULL
-	for (j in 1:max(data[,"Chromosome"])) {
-		start[j] = min(which(data[,"Chromosome"]==j))
-		end[j] = max(which(data[,"Chromosome"]==j))
+	for (j in 1:22) {
+		end = c(end, max(CytoBand$End[CytoBand$Chromosome==j]))
 	}
-	labels = 1:max(data[,"Chromosome"])
-	labels[labels==23] = "X"
-	axis(1, at = .5*(start+end), labels=labels, cex.axis = 1.15, las = 1)
-	box(lwd=2.5)
+	end = cumsum(end)
+	start = rep(0, 22)
+	start[2:22] = end[1:21]+1
+	for (j in 1:22) {
+		data[data[,"Chromosome"]==j,"Start"] = data[data[,"Chromosome"]==j,"Start"] + start[j]
+	}
+	col = rep("grey75", nrow(data))
+	plot(data[,"Start"], data[,"Log2Ratio"], type="p", pch=".", cex=1.95, col=col, axes=FALSE, frame=TRUE, xlab="", ylab="", main="", ylim=c(-4,5))
+	axis(2, at = c(-4, -2, 0, 2, 4), labels = c(-4, -2, 0, 2, 4), cex.axis = 1, las = 1)
+	mtext(side = 2, text = expression(Log[2]~"Ratio"), line = 3.15, cex = 1.25)
+	for (j in 1:22) {
+		v = start[j]
+		abline(v=v, col="goldenrod3", lty=3, lwd=1)
+	}
+	abline(v=max(data[,"Start"]), col="goldenrod3", lty=3, lwd=1)
+	abline(h=0, col="red")
+	axis(1, at = .5*(start+end), labels=c(1:22), cex.axis = 0.85, las = 1)
+    rect(xleft=1-1e10, xright=max(data[,"Start"])+1e10, ybottom=4, ytop=6, col="lightgrey", border="black", lwd=1.5)
+	title(main = opt$sample, line=-1, cex.main=.75, font.main=1)
+    box(lwd=1.5)
 	dev.off()
 	
 } else if (opt$type=="segmented") {
@@ -98,29 +101,29 @@ if (opt$type=="raw") {
 		segmented[segmented[,"Chromosome"]==j,"End"] = segmented[segmented[,"Chromosome"]==j,"End"] + start[j]
 		data[data[,"Chromosome"]==j,"Start"] = data[data[,"Chromosome"]==j,"Start"] + start[j]
 	}
-	col = "grey80"
-	pdf(file=outfile, width=18, height=7)
+	col = "grey75"
+	pdf(file=outfile, width=10, height=4.25)
 	par(mar=c(5, 5, 4, 2)+.1)
-	plot(data[,"Start"], data[,"Log2Ratio"], type="p", pch=".", cex=2, col=col, axes=FALSE, frame=TRUE, xlab="", ylab="", main="", ylim=c(-2,2))
+	plot(data[,"Start"], data[,"Log2Ratio"], type="p", pch=".", cex=1.95, col=col, axes=FALSE, frame=TRUE, xlab="", ylab="", main="", ylim=c(-4,5))
+ 	axis(2, at = c(-4, -2, 0, 2, 4), labels = c(-4, -2, 0, 2, 4), cex.axis = 1, las = 1)
  	for (j in 1:nrow(segmented)) {
  		lines(x=c(segmented[j,"Start"], segmented[j,"End"]), y=rep(segmented[j,"Log2Ratio"],2), lty=1, lwd=2.75, col="red")
- 	}
- 	axis(2, at = NULL, cex.axis = 1.15, las = 1)
-	mtext(side = 1, text = "Chromosome", line = 3, cex = 1.25)
-	mtext(side = 2, text = expression(Log[2]~"Ratio"), line = 3.15, cex = 1.25)
-	abline(v=1, col="goldenrod3")
-	abline(h=0, col="red")
-	for (j in 2:22) {
+ 	} 	
+ 	mtext(side = 2, text = expression(Log[2]~"Ratio"), line = 3.15, cex = 1.25)
+	for (j in 1:22) {
 		v = start[j]
-		abline(v=v, col="goldenrod3")
+		abline(v=v, col="goldenrod3", lty=3, lwd=1)
 	}
-	abline(v=max(data[,"Start"]), col="goldenrod3")
-	axis(1, at = .5*(start+end), labels=c(1:22), cex.axis = 1.15, las = 1)
-	for (k in 1:8) {
-		abline(h=(opt$gamma*log2(((opt$rho)*k + (1-opt$rho)*2)/((opt$rho)*opt$psi + (1-opt$rho)*2))), col="darkorange", lty=3)
-		mtext(text=k, side=4, line=.5, at=(opt$gamma*log2(((opt$rho)*k + (1-opt$rho)*2)/((opt$rho)*opt$psi + (1-opt$rho)*2))), las=2, cex=.75, col="darkorange")
+	abline(v=max(data[,"Start"]), col="goldenrod3", lty=3, lwd=1)
+	abline(h=0, col="red")
+	axis(1, at = .5*(start+end), labels=c(1:22), cex.axis = 0.85, las = 1)
+    rect(xleft=1-1e10, xright=max(data[,"Start"])+1e10, ybottom=4, ytop=6, col="lightgrey", border="black", lwd=1.5)
+	title(main = opt$sample, line=-1, cex.main=.75, font.main=1)
+	for (k in c(1,2,3,4,6,9)) {
+		abline(h=(opt$gamma*log2(((opt$rho)*k + (1-opt$rho)*2)/((opt$rho)*opt$psi + (1-opt$rho)*2))), col="brown", lty=3, cex=.5)
+		mtext(text=k, side=4, line=.5, at=(opt$gamma*log2(((opt$rho)*k + (1-opt$rho)*2)/((opt$rho)*opt$psi + (1-opt$rho)*2))), las=2, cex=.5, col="brown")
 	}
-	box(lwd=2.5)
+	box(lwd=1.5)
 	dev.off()
 
 } else if (opt$type=="bychromosome") {
@@ -141,9 +144,9 @@ if (opt$type=="raw") {
 		par(mar = c(6.1, 6, 4.1, 3))
 		start = 1
 		end = max(CytoBand[CytoBand[,"Chromosome"]==ii,"End"])
-		plot(1, 1, type="n", xlim=c(start,end), ylim=c(-2,2), xlab="", ylab="", main="", frame.plot=FALSE, axes=FALSE)
+		plot(1, 1, type="n", xlim=c(start,end), ylim=c(-4,4), xlab="", ylab="", main="", frame.plot=FALSE, axes=FALSE)
 		index = data[,"Chromosome"]==ii
-		points(data[index,"Start"], data[index,"Log2Ratio"], type="p", pch=".", cex=1.15, col="grey80")
+		points(data[index,"Start"], data[index,"Log2Ratio"], type="p", pch=".", cex=1.15, col="grey75")
 		tmp = subset(segmented, segmented[,"Chromosome"]==ii)
 		for (i in 1:nrow(tmp)) {
 			points(c(tmp[i,"Start"], tmp[i,"End"]), rep(tmp[i,"Log2Ratio"],2), type="l", col="red", lwd=4)
@@ -152,9 +155,9 @@ if (opt$type=="raw") {
 			points(c(tmp[i,"End"], tmp[i+1,"Start"]), c(tmp[i,"Log2Ratio"],tmp[i+1,"Log2Ratio"]), type="l", col="red", lwd=1)
 		}
 		abline(h=0, lwd=1)
-		axis(2, at = c(-2,-1.5,-1,-.5,0,.5,1,1.5,2), labels=c("-2","-1.5","-1","-.5","0",".5","1","1.5","2"), cex.axis = 1.25, las = 1, lwd=1.5, lwd.ticks=1.35)
+		axis(2, at = c(-4,-2,0,2,4), labels=c("-4","-2","0","2", "4"), cex.axis = 1.25, las = 1, lwd=1.5, lwd.ticks=1.35)
 		mtext(side = 2, text = expression("Log"[2]~"Ratio"), line = 4, cex = 1.5)
-		for (k in 1:8) {
+		for (k in c(1,2,3,4,6,9)) {
 			abline(h=(opt$gamma*log2(((opt$rho)*k + (1-opt$rho)*2)/((opt$rho)*opt$psi + (1-opt$rho)*2))), col="darkorange", lty=3)
 			mtext(text=k, side=4, line=.5, at=(opt$gamma*log2(((opt$rho)*k + (1-opt$rho)*2)/((opt$rho)*opt$psi + (1-opt$rho)*2))), las=2, cex=.75, col="darkorange")
 		}
@@ -165,6 +168,5 @@ if (opt$type=="raw") {
 		close.screen(all.screens=TRUE)
 		dev.off()
 	}
-
-
+	
 }
