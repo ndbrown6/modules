@@ -10,7 +10,7 @@ from Bio import SeqIO
 
 def find_mh_1d(direction, seq, start_coord, end_coord, coord2pyidx = -1): 
     """arguments: 
-        seg - is the chromosome seq object
+        seq - is the chromosome seq object
         start_coord: pos of the first deleted nt (1 indexed)
         end_coord: pos of the last deleted nt (1 indexed)
         as python is 0 indexed, conversion would be:
