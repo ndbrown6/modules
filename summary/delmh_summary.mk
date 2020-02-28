@@ -5,6 +5,7 @@ include modules/Makefile.inc
 LOGDIR ?= log/delmh_summary.$(NOW)
 PHONY += delmh_summary
 DEFAULT_ENV = $(HOME)/share/usr/anaconda-envs/jrflab-modules-0.1.4
+REF_FASTA = /data/chan/share/chanlabpipeline/db/GATKBundle/reference/M_musculus/assembly/mm10/mm10.fasta
 
 delmh_summary : tsv/delmh_summary.tsv
 
