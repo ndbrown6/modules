@@ -1,4 +1,4 @@
-# This is a folk from jrflab/modules. This module is tailored for WGS analysis.
+# This is a folk from jrflab/modules. This module is BEING tailored for WGS analysis.
 [![Build Status](https://travis-ci.org/cBioPortal/cbioportal.svg?branch=master)](https://travis-ci.org/jrflab/modules)
 
 # Summary
